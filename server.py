@@ -36,12 +36,13 @@ def basictick(tickrate): # RLLY Basic, only use this loop for basic testing # # 
     
                 if (not client_queue.empty()):                  # if the queue isn't empty...
                     data_tuple = client_queue.get()             # data_tuple = (clientnumber, pos x, pos y)
-                    struct.pack_into('BHH', new_data, offset, data_tuple[0], data_tuple[1], data_tuple[2])
+                    print("Q: " + str(client_queue.qsize()))
+                    struct.pack_into('<BHH', new_data, offset, data_tuple[0], data_tuple[1], data_tuple[2])
                     offset += 5
 
-                    ip = info.clients[i]
-                    packet.send_all(socket, ip, new_data)       # send this packet to all clients! maybe in another thread?
-                    print("SENT A TICK to: " + str(ip))
+                    ip = info.clients[i]                # consider removing since packet.send_all() doesn't need an ip arg
+            packet.send_all(socket, ip, new_data)       # send this packet to all clients! maybe in another thread?
+            #print("SENT A TICK to: " + str(ip))
             
             
 
