@@ -27,7 +27,7 @@ class Server:
 
 
     def basictick(self, tickrate): # RLLY Basic, only use this loop for basic testing # # # # Perhaps add support for more than 2 connected players
-        while True:
+        while self.running:
             time.sleep(0.010)                                         # Sleep for 10 milliseconds (IMPORTANT TO REDUCE CPU USAGE)
             if (info.clients and not info.client_data[0].empty()):    # check if info.clients is not empty, and client 1's queue has data  
                 new_data = bytearray(12)                    # creates a buffer of 12 bytes  (do you need to destroy it when done?//memory leak?)
@@ -40,17 +40,19 @@ class Server:
         
                     if (not client_queue.empty()):                  # if the queue isn't empty...
                         data_tuple = client_queue.get()             # data_tuple = (clientnumber, pos x, pos y)
-                        print("Q: " + str(client_queue.qsize()))
+                        #print("Q: " + str(client_queue.qsize()))
                         struct.pack_into('<BHH', new_data, offset, data_tuple[0], data_tuple[1], data_tuple[2])
                         offset += 5
 
                         ip = info.clients[i]                # consider removing since packet.send_all() doesn't need an ip arg
-                packet.send_all(self.socket, ip, new_data)       # send this packet to all clients! maybe in another thread?
+                packet.send_all(self, ip, new_data)       # send this packet to all clients! maybe in another thread?
                 #print("SENT A TICK to: " + str(ip))
  
 
 
     def start(self):
+        self.running = True
+
         # set up the socket using local address and a specified port
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # configure socket for ipv4 and UDP
         self.socket.bind(("", 4296))                                   # "" means socket will listen to any network source
@@ -60,7 +62,7 @@ class Server:
         gamethread.start()
 
         # packet handling loop
-        while True:
+        while self.running:
             # get the data sent to the server
             data, ip = self.socket.recvfrom(1024)
 
@@ -71,16 +73,16 @@ class Server:
             
             # set up a thread to handle the packet type
             if (data_type == 1):   # PING
-                t = Thread(target=packet.ping, args=(self.socket, ip, data))
+                t = Thread(target=packet.ping, args=(self, ip, data))
 
             elif (data_type == 2): # HANDSHAKE
-                t = Thread(target=packet.handshake, args=(self.socket, ip, data))
+                t = Thread(target=packet.handshake, args=(self, ip, data))
 
             elif (data_type == 3): # MESSAGE
-                t = Thread(target=packet.message, args=(self.socket, ip, data))
+                t = Thread(target=packet.message, args=(self, ip, data))
 
             elif (data_type == 4): # BASIC TICK
-                t = Thread(target=packet.basic_tick, args=(self.socket, ip, data))
+                t = Thread(target=packet.basic_tick, args=(self, ip, data))
             else:
                 continue
 
