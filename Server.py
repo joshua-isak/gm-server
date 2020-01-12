@@ -4,7 +4,6 @@ import queue
 import time
 from threading import Thread
 
-import info
 import packet
 from Color import color
 
@@ -14,6 +13,7 @@ class Server:
         self.port = port                # Server application port
         self.socket = None              # Server's UDP socket
         self.running = False
+        self.debug = 0
 
         self.clients = []               # Connected clients
         self.client_ids = {}            # Index of connected client ids to their respective object reference
@@ -22,13 +22,11 @@ class Server:
 
     # Print message in console and send to all clients
     def message(self, msg, clr):                  
-        data = bytearray(len(msg) + 2 + 1)              # Length of packet + 1 each for packet padding and packet type
-        struct.pack_into('BB', data, 0, 0, 3)           # set up the packet (Padding, PacketType 3 for message)
-        fmt = str(len(msg)) + 's'                       # set up format code for struct.pack_into (length of string + type string)
+        data = bytearray(len(msg) + 2 + 1)                      # Length of packet + 1 each for packet padding and packet type
+        struct.pack_into('BB', data, 0, 0, 3)                   # set up the packet (Padding, PacketType 3 for message)
+        fmt = str(len(msg)) + 's'                               # set up format code for struct.pack_into (length of string + type string)
         struct.pack_into(fmt, data, 2, msg.encode('utf-8'))     # don't forget that offset arg (2 here) when writing to the bytearray!
         packet.send_all(self, data)
-        #print(msg)
-        #print(repr(data))
         print(clr + msg + color.end)
 
 
@@ -41,39 +39,31 @@ class Server:
                 struct.pack_into('BB', new_data, 0, 0, 4)   # set up the packet (Padding, PacketType)
                 offset = 2                                  # define current offset for the buffer "new_data"
 
-                for i in self.clients:          # loop through connected clients and get their most recent position data from their Queues
-                    #client_id = i.id
-                    #client_queue = self.client_data[client_num]     # gets the client's queue from info.client_data[]
+                for i in self.clients:                  # loop through connected clients and get their most recent data from their Queues
                     client_queue = i.queue
 
                     if (not client_queue.empty()):                  # if the queue isn't empty...
                         data_tuple = client_queue.get()             # data_tuple = (clientnumber, pos x, pos y)
-                        print("this worked")
-                        print(str(data_tuple))
                         struct.pack_into('<BHH', new_data, offset, data_tuple[0], data_tuple[1], data_tuple[2])
                         offset += 5
                         
-                print(repr(new_data))
                 packet.send_all(self, new_data)       # send this packet to all clients! maybe in another thread?
-                #print("SENT A TICK to: " + str(ip))
  
 
 
     def start(self):
         self.running = True
 
-        # set up the socket using local address and a specified port
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # configure socket for ipv4 and UDP
-        self.socket.bind(("", 4296))                                   # "" means socket will listen to any network source
+        self.socket.bind(("", 4296))                                   # "" means socket will listen to any network source on port 4296
 
         # set up and start the gamethread
-        gamethread = Thread(target=self.basictick, args=(info.tickrate,))
+        gamethread = Thread(target=self.basictick, args=(60,))
         gamethread.start()
 
         # packet handling loop
-        while self.running:
-            # get the data sent to the server
-            data, ip = self.socket.recvfrom(1024)
+        while self.running: 
+            data, ip = self.socket.recvfrom(1024)   # get the data sent to the server
 
             # unpack part of the data to find the packet type
             # data [1:2] is used to look at the first byte since Gamemaker 
@@ -95,5 +85,4 @@ class Server:
             else:
                 continue
 
-            # start the thread to handle the packet
-            t.start() 
+            t.start()       # start the thread to handle the packet

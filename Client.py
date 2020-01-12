@@ -16,9 +16,9 @@ class Client:
         self.new_packet = False                 # Whether or not a new packet has arrived (gameloop resets this to false)
         self.is_host = False                    # Whether client is host
 
-        self.queue = queue.Queue(0)             # legacy (remove later)
+        self.queue = queue.Queue(0)             # legacy (remove later?)
 
-        # Gameplay variables
+        # Unused
         self.x = None
         self.y = None
         self.hull_angle = None
@@ -40,8 +40,7 @@ class Client:
         else:
             msg = self.username + " has connected!"
             self.server.message(msg, color.green)
-            
-        
+              
 
 
     def disconnect(self, reason):
