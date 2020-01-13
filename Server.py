@@ -18,16 +18,27 @@ class Server:
         self.clients = []               # Connected clients
         self.client_ids = {}            # Index of connected client ids to their respective object reference
         self.host = None                # Reference to client that is host
+        self.acks = []                  # list of pending acknowledgements
 
 
     # Print message in console and send to all clients
-    def message(self, msg, clr):                  
+    def message(self, msg, col):                  
         data = bytearray(len(msg) + 2 + 1)                      # Length of packet + 1 each for packet padding and packet type
         struct.pack_into('BB', data, 0, 0, 3)                   # set up the packet (Padding, PacketType 3 for message)
         fmt = str(len(msg)) + 's'                               # set up format code for struct.pack_into (length of string + type string)
         struct.pack_into(fmt, data, 2, msg.encode('utf-8'))     # don't forget that offset arg (2 here) when writing to the bytearray!
         packet.send_all(self, data)
-        print(clr + msg + color.end)
+        print(col + msg + color.end)
+
+
+    # track and deal with client timeouts
+    def timeouts(self):
+        while True:
+            time.sleep(3)
+            for x in self.clients:
+                if ((time.time() - x.last_ping) > 3):               # if client's last ping was more than 3 seconds ago
+                    x.disconnect(1)                                 # disconnect the client, reason 1 means timeout
+
 
 
     # RLLY Basic, only use this loop for basic testing # # # # Perhaps add support for more than 2 connected players
@@ -60,6 +71,10 @@ class Server:
         # set up and start the gamethread
         gamethread = Thread(target=self.basictick, args=(60,))
         gamethread.start()
+
+        # set up and start timeout handler
+        timethread = Thread(target=self.timeouts, args=())
+        timethread.start()
 
         # packet handling loop
         while self.running: 

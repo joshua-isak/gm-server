@@ -4,15 +4,16 @@ import queue
 import random
 import time
 
-import info
 from Color import color
 from Client import Client
 
 
 def handle_ping(server, ip, data):
-    if (server.debug > 0):               
-        print(color.cyan + "{}: _Ping!".format(ip) + color.end)
+    client_id = struct.unpack('B', data[2:3])[0]                # get the client_id of the packet sender
+    if client_id in server.client_ids.keys():                   # check if client is actually connected
+        server.client_ids[client_id].last_ping = time.time()
     server.socket.sendto(data, ip)
+
 
 
 def handle_handshake(server, ip, data):
@@ -34,22 +35,23 @@ def handle_handshake(server, ip, data):
         
 
     elif (handshake_type == 2): # Client Acknowledgement
-        server.socket.sendto(data, ip)          # this line might no longer be necessary
+        server.socket.sendto(data, ip)          # this line might no longer be necessary TODO remove it?
         client_id = struct.unpack('B', data[3:4])[0]
         server.client_ids[client_id].handshake = True
 
 
 
-def handle_message(server, ip, data):           # update this to inclue server.message()
+def handle_message(server, ip, data):           # TODO update this to inclue server.message()
     print("{}: {}".format(ip, data.decode('utf-8')))
     send_all(server, data)
 
 
 # Only to be used for two player coordinate testing
 def basic_tick(server, ip, data):
-    data_tuple = struct.unpack('<BHH', data[2:])        # put packet's data in data_tuple = (client_id, pos x, pos y)
+    data_tuple = struct.unpack('<BHH', data[2:])            # put packet's data in data_tuple = (client_id, pos x, pos y)
     client_id = data_tuple[0]
-    server.client_ids[client_id].queue.put(data_tuple)  # push data_tuple into the client's corresponding queue
+    if client_id in server.client_ids.keys():               # only process the data if the client_id matches one of a connected client
+        server.client_ids[client_id].queue.put(data_tuple)  # push data_tuple into the client's corresponding queue
 
 
 

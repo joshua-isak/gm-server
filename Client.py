@@ -11,14 +11,15 @@ class Client:
         self.ip = ip                            # client network address
         self.username = username                # ingame username
         self.server = server                    # reference to main server
-        self.handshake = False                  # Becomes true when client completes third part of handshake
-        self.tick_data = None                   
-        self.new_packet = False                 # Whether or not a new packet has arrived (gameloop resets this to false)
-        self.is_host = False                    # Whether client is host
+        self.handshake = False                  # whether client has completed handshake
+        self.tick_data = None 
+        self.last_ping = time.time()            # time of last ping                 
 
-        self.queue = queue.Queue(0)             # legacy (remove later?)
+        self.queue = queue.Queue(0)             # TODO Fix queue out of sync bug
 
         # Unused
+        self.new_packet = False                 # Whether a new packet has arrived (gameloop resets this to false)
+        self.is_host = False                    # Whether client is host
         self.x = None
         self.y = None
         self.hull_angle = None
@@ -38,15 +39,18 @@ class Client:
         if (self.handshake == False):               # Disconnect if client hasn't completed handshake
             self.disconnect(0)
         else:
-            msg = self.username + " has connected!"
+            msg = self.username + " connected!"
             self.server.message(msg, color.green)
               
 
 
     def disconnect(self, reason):
         if (reason == 0):                   # Failed handshake
-            msg = self.username + " failed handshake"
+            msg = self.username + " disconnected (failed handshake)"
             self.server.message(msg, color.red)
-        
+        if (reason == 1):                   # Timeout
+            msg = self.username + " disconected (timed out)"
+            self.server.message(msg, color.red)
+
         self.server.clients.remove(self)
         self.server.client_ids.pop(self.id)
