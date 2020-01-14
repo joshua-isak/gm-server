@@ -28,12 +28,17 @@ class Client:
 
 
     def connect(self):
-        self.server.clients.append(self)                # Add this client to list of hosts
-        self.server.client_ids[self.id] = self          # Add this client's id to index
         self.connected = True
 
         if (self.server.host == None):                  # Set this client as host if the server has none
             self.server.host = self
+            self.is_host = True
+
+        packet.send_connection(self.server, 0, self)    # Send ids and usernames of connected clients to this client
+        packet.send_connection(self.server, 1, self)    # Tell all clients this client has connected
+
+        self.server.clients.append(self)                # Add this client to list of hosts
+        self.server.client_ids[self.id] = self          # Add this client's id to Index
 
         time.sleep(1)
 
@@ -42,7 +47,7 @@ class Client:
         else:
             msg = self.username + " connected!"
             self.server.message(msg, color.green)
-            packet.send_connection(self.server, 1, self)     # Tell all clients this client has connected
+            
               
 
 

@@ -96,6 +96,7 @@ def send_with_ack(server, client, data):
                                 
     while client.connected:                         # keep sending packet until an acknowledgement is received
         server.socket.sendto(data, client.ip)
+        print("waiting for ack from " + str(client.id))
         time.sleep(1)
         if server.pending_acks[ack_code] == True:
             break
@@ -105,7 +106,6 @@ def send_with_ack(server, client, data):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 def send_connection(server, conn_type, client):  # Requires acknowledgement
-    print("connected clients :" + str(server.clients))
     # prepare packet header
     new_data = bytearray(200)
     offset = 0
