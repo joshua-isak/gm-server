@@ -15,13 +15,13 @@ class Server:
         self.running = False
         self.debug = 0
 
-        self.clients = []               # Connected clients
+        self.clients = []               # List of onnected clients
         self.client_ids = {}            # Index of connected client ids to their respective object reference
         self.host = None                # Reference to client that is host
-        self.acks = []                  # list of pending acknowledgements
+        self.pending_acks = {}          # Index of pending acknowledgements to their status
 
 
-    # Print message in console and send to all clients
+    # Print message in console and send it to all clients
     def message(self, msg, col):                  
         data = bytearray(len(msg) + 2 + 1)                      # Length of packet + 1 each for packet padding and packet type
         struct.pack_into('BB', data, 0, 0, 3)                   # set up the packet (Padding, PacketType 3 for message)
@@ -36,8 +36,8 @@ class Server:
         while True:
             time.sleep(3)
             for x in self.clients:
-                if ((time.time() - x.last_ping) > 3):               # if client's last ping was more than 3 seconds ago
-                    x.disconnect(1)                                 # disconnect the client, reason 1 means timeout
+                if ((time.time() - x.last_ping) > 3):           # if client's last ping was more than 3 seconds ago
+                    x.disconnect(1)                             # disconnect the client, reason 1 means timeout
 
 
 
@@ -97,6 +97,12 @@ class Server:
 
             elif (data_type == 4): # BASIC TICK
                 t = Thread(target=packet.basic_tick, args=(self, ip, data))
+
+            elif (data_type == 5): # CONNECTION
+                print(color.red + "got unhandled packet (connection)" + color.end)
+
+            elif (data_type == 6): # ACKNOWLEDGEMENT
+                t = Thread(target=packet.handle_ack, args=(self, ip, data))
             else:
                 continue
 
