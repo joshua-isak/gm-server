@@ -53,7 +53,11 @@ class Client:
 
     def disconnect(self, reason):
         self.connected = False
-        packet.send_connection(self.server, 3, self)     # Tell all clients this client has disconnected
+
+        self.server.clients.remove(self)
+        self.server.client_ids.pop(self.id)
+
+        packet.send_connection(self.server, 3, self)     # Tell all connected clients this client has disconnected
 
         if (reason == 0):               # Failed handshake
             msg = self.username + " disconnected (failed handshake)"
@@ -64,5 +68,3 @@ class Client:
             self.server.message(msg, color.red)
 
 
-        self.server.clients.remove(self)
-        self.server.client_ids.pop(self.id)

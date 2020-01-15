@@ -109,12 +109,13 @@ def send_connection(server, conn_type, client):  # Requires acknowledgement
     # prepare packet header
     new_data = bytearray(200)
     offset = 0
-    struct.pack_into('BB', new_data, offset, 0, 5)
+    struct.pack_into('BB', new_data, offset, 0, 5)      # write (Padding, Packettype 5)
     offset += 2
 
-    struct.pack_into('B', new_data, offset, conn_type) 
+    struct.pack_into('B', new_data, offset, conn_type)  # write connection type
     offset += 1
-    offset += 1   # add padding for ack_code
+
+    offset += 1   # add empty space for ack_code
 
     # send all client ids and usernames to the specified client
     if (conn_type == 0):
