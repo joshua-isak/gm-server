@@ -6,6 +6,7 @@ from threading import Thread
 
 import packet
 from Color import color
+from Buffer import Buffer
 
 
 class Server:
@@ -59,6 +60,30 @@ class Server:
                         offset += 5
                         
                 packet.send_all(self, new_data)       # send this packet to all clients! maybe in another thread?
+
+
+        
+    def gametick(self, tickrate):
+        while self.running:
+            time.sleep(0.010)                           # Sleep for 10 milliseconds
+            if (self.host and self.host.new_packet):    # Check if we've received new tick packet from the host
+                new_data = Buffer(512)                  # Create a new buffer of 512 bytes to hold outgoing packet data
+                new_data.prepare_packet(10)
+
+                new_data.offset = 150           # Go to start of player data
+                for x in self.clients:                          
+                    new_data.write_real('B', 1, x.id)           # write x's uid
+
+                    new_data.write_real('H', 2, x.pos_x)        # write x's pos_x
+                    new_data.write_real('H', 2, x.pos_y)        # write x's pos_y
+                    new_data.write_real('B', 1, x.is_alive)     # write x's is_alive
+                    new_data.write_real('f', 4, x.hull_angle)   # write x's hull_angle
+                    new_data.write_real('f', 4, x.turret_angle) # write x's turret_angle
+
+                    new_data.offset += 16                       # Advance to next player's data
+
+                packet.send_all(self, new_data.data)    # send this packet to all clients! maybe in another thread?
+                self.host.new_packet = False
  
 
 
@@ -69,7 +94,10 @@ class Server:
         self.socket.bind(("", 4296))                                   # "" means socket will listen to any network source on port 4296
 
         # set up and start the gamethread
-        gamethread = Thread(target=self.basictick, args=(60,))
+        #gamethread = Thread(target=self.basictick, args=(60,))
+        #gamethread.start()
+
+        gamethread = Thread(target=self.gametick, args=(60,))
         gamethread.start()
 
         # set up and start timeout handler
@@ -86,23 +114,27 @@ class Server:
             data_type = struct.unpack('B', data[1:2])[0] 
             
             # set up a thread to handle the packet type
-            if (data_type == 1):   # PING
+            if (data_type == 1):    # PING
                 t = Thread(target=packet.handle_ping, args=(self, ip, data))
 
-            elif (data_type == 2): # HANDSHAKE
+            elif (data_type == 2):  # HANDSHAKE
                 t = Thread(target=packet.handle_handshake, args=(self, ip, data))
 
-            elif (data_type == 3): # MESSAGE
+            elif (data_type == 3):  # MESSAGE
                 t = Thread(target=packet.handle_message, args=(self, ip, data))
 
-            elif (data_type == 4): # BASIC TICK
+            elif (data_type == 4):  # BASIC TICK
                 t = Thread(target=packet.basic_tick, args=(self, ip, data))
 
-            elif (data_type == 5): # CONNECTION
+            elif (data_type == 5):  # CONNECTION
                 print(color.red + "got unhandled packet (connection)" + color.end)
 
-            elif (data_type == 6): # ACKNOWLEDGEMENT
+            elif (data_type == 6):  # ACKNOWLEDGEMENT
                 t = Thread(target=packet.handle_ack, args=(self, ip, data))
+
+            elif (data_type == 10): # GAMETICK
+                t = Thread(target=packet.handle_gametick, args=(self, ip, data))
+
             else:
                 continue
 

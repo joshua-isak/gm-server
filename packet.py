@@ -64,6 +64,22 @@ def basic_tick(server, ip, data):
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
 
 
+def handle_gametick(server, ip, data):          
+    client_id = struct.unpack('B', data[2:3])[0]
+    client = server.client_ids[client_id]           # TODO add error checking if this throws a not in dictionary exception...
+
+    client.pos_x = struct.unpack('<H', data[151:153])[0]            # read pos_x
+    client.pos_y = struct.unpack('<H', data[153:155])[0]            # read pos_y
+    client.is_alive = struct.unpack('B', data[155:156])[0]          # read is_alive
+    client.hull_angle = struct.unpack('<f', data[156:160])[0]       # read hull_angle
+    client.turret_angle = struct.unpack('<f', data[160:164])[0]     # read turret_angle
+
+    client.new_packet = True
+
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - #
+
+
 # Send a packet to all connected clients
 def send_all(server, data):
     for x in server.clients:

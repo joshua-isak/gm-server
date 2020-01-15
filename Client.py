@@ -6,8 +6,8 @@ from Color import color
 
 class Client:
 
-    def __init__(self, id, ip, server, username):
-        self.id = id                            # unique client id
+    def __init__(self, uid, ip, server, username):
+        self.id = uid                           # unique client id
         self.ip = ip                            # client network address
         self.username = username                # ingame username
         self.server = server                    # reference to main server
@@ -15,15 +15,21 @@ class Client:
         self.last_ping = time.time()            # time of last ping                 
         self.queue = queue.Queue(0)             # TODO Fix queue out of sync bug
         self.connected = False
+        self.is_host = False                    # Whether client is host
+
+        self.new_packet = False                 # Whether a new packet has arrived (gameloop resets this to false)
+        self.pos_x = 0
+        self.pos_y = 0
+        self.is_alive = 0
+        self.hull_angle = 0
+        self.turret_angle = 0
 
         # Unused
         self.tick_data = None 
-        self.new_packet = False                 # Whether a new packet has arrived (gameloop resets this to false)
-        self.is_host = False                    # Whether client is host
-        self.x = None
-        self.y = None
-        self.hull_angle = None
-        self.turret_angle = None
+        
+        
+
+        
 
 
 
