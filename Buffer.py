@@ -18,7 +18,7 @@ class Buffer:
 
 
     def write_string(self, string):
-        string.encode('utf-8')
+        string = string.encode('utf-8')
         fmt = str(len(string)) + 's'
         struct.pack_into(fmt, self.data, self.offset, string)
         self.offset += len(string)
